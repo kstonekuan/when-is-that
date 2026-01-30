@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import styles from './ModeToggle.module.css'
 
 export type TimeMode = 'live' | 'custom'
@@ -8,13 +8,17 @@ interface ModeToggleProps {
   onModeChange: (mode: TimeMode) => void
 }
 
-export function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
+// rerender-memoize: Wrap in memo since props change infrequently
+export const ModeToggle = memo(function ModeToggle({
+  mode,
+  onModeChange,
+}: ModeToggleProps) {
   const isCustom = mode === 'custom'
 
-  // rerender-functional-setstate: Use callback for stable reference
+  // rerender-stable-callback: Avoid dependency on isCustom by reading mode directly
   const handleToggle = useCallback(() => {
-    onModeChange(isCustom ? 'live' : 'custom')
-  }, [isCustom, onModeChange])
+    onModeChange(mode === 'custom' ? 'live' : 'custom')
+  }, [mode, onModeChange])
 
   return (
     <div className={styles.container}>
@@ -37,4 +41,4 @@ export function ModeToggle({ mode, onModeChange }: ModeToggleProps) {
       </span>
     </div>
   )
-}
+})

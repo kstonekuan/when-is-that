@@ -14,6 +14,44 @@
   font-variant-numeric: tabular-nums;
 }
 
+.digitalTimeEditable {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.timeInput {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  width: 3.5rem;
+  text-align: center;
+  padding: var(--space-sm);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(201, 85, 61, 0.2);
+}
+
+.timeSeparator {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  padding: 0 var(--space-xs);
+}
+
 .clockWrapper {
   position: relative;
 }

@@ -1,7 +1,7 @@
 .container {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .toggle {
@@ -41,7 +41,6 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  min-width: 80px;
 }
 
 .labelActive {

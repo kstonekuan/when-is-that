@@ -1,5 +1,5 @@
 import type { DateTime } from 'luxon'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCurrentTime } from '../../hooks/useCurrentTime'
 import styles from './Calendar.module.css'
 
@@ -22,7 +22,37 @@ interface CalendarDay {
   key: string
 }
 
-export function Calendar({
+interface CalendarDayButtonProps {
+  day: CalendarDay
+  isInteractive: boolean
+  onDayClick: (day: CalendarDay) => void
+}
+
+// rerender-stable-callbacks: Extract day button to avoid inline function in map
+const CalendarDayButton = memo(function CalendarDayButton({
+  day,
+  isInteractive,
+  onDayClick,
+}: CalendarDayButtonProps) {
+  const handleClick = useCallback(() => {
+    onDayClick(day)
+  }, [day, onDayClick])
+
+  return (
+    <button
+      type="button"
+      className={`${styles.day} ${!day.isCurrentMonth ? styles.dayOtherMonth : ''} ${day.isToday ? styles.dayToday : ''} ${day.isSelected && !day.isToday ? styles.daySelected : ''} ${isInteractive ? styles.dayClickable : ''}`}
+      onClick={handleClick}
+      disabled={!isInteractive}
+      tabIndex={isInteractive ? 0 : -1}
+    >
+      {day.date}
+    </button>
+  )
+})
+
+// rerender-memoize: Wrap in memo to prevent unnecessary re-renders from parent
+export const Calendar = memo(function Calendar({
   timezone,
   customDateTime,
   onDateChange,
@@ -213,18 +243,14 @@ export function Calendar({
 
       <div className={styles.days}>
         {calendarDays.map((day) => (
-          <button
+          <CalendarDayButton
             key={day.key}
-            type="button"
-            className={`${styles.day} ${!day.isCurrentMonth ? styles.dayOtherMonth : ''} ${day.isToday ? styles.dayToday : ''} ${day.isSelected && !day.isToday ? styles.daySelected : ''} ${isInteractive ? styles.dayClickable : ''}`}
-            onClick={() => handleDayClick(day)}
-            disabled={!isInteractive}
-            tabIndex={isInteractive ? 0 : -1}
-          >
-            {day.date}
-          </button>
+            day={day}
+            isInteractive={isInteractive}
+            onDayClick={handleDayClick}
+          />
         ))}
       </div>
     </div>
   )
-}
+})

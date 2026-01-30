@@ -112,7 +112,14 @@ function getTimezoneOffset(timezone: string): string {
   }
 }
 
+// js-caching: Cache computed timezone data to avoid recalculation on each call
+let cachedTimezoneGroups: TimezoneGroup[] | null = null
+let cachedAllTimezones: TimezoneOption[] | null = null
+let cachedDisplayNameMap: Map<string, string> | null = null
+
 export function getTimezoneGroups(): TimezoneGroup[] {
+  if (cachedTimezoneGroups) return cachedTimezoneGroups
+
   const grouped: Record<string, TimezoneOption[]> = {}
 
   for (const tz of TIMEZONE_DATA) {
@@ -140,25 +147,34 @@ export function getTimezoneGroups(): TimezoneGroup[] {
     'Universal',
   ]
 
-  return regionOrder
+  cachedTimezoneGroups = regionOrder
     .filter((region) => grouped[region])
     .map((region) => ({
       label: region,
       options: grouped[region],
     }))
+
+  return cachedTimezoneGroups
 }
 
 export function getAllTimezones(): TimezoneOption[] {
-  return TIMEZONE_DATA.map((tz) => ({
+  if (cachedAllTimezones) return cachedAllTimezones
+
+  cachedAllTimezones = TIMEZONE_DATA.map((tz) => ({
     value: tz.zone,
     label: tz.label,
     region: tz.region,
     offset: getTimezoneOffset(tz.zone),
   }))
+
+  return cachedAllTimezones
 }
 
 export function searchTimezones(query: string): TimezoneOption[] {
   const lowerQuery = query.toLowerCase()
+  // js-early-exit: Return early for empty queries
+  if (!lowerQuery) return getAllTimezones()
+
   return getAllTimezones().filter(
     (tz) =>
       tz.label.toLowerCase().includes(lowerQuery) ||
@@ -173,10 +189,18 @@ export function getLocalTimezone(): string {
 }
 
 export function getTimezoneDisplayName(timezone: string): string {
-  const option = getAllTimezones().find((tz) => tz.value === timezone)
-  if (option) {
-    return option.label
+  // js-caching: Cache display name lookups
+  if (!cachedDisplayNameMap) {
+    cachedDisplayNameMap = new Map()
+    for (const tz of getAllTimezones()) {
+      cachedDisplayNameMap.set(tz.value, tz.label)
+    }
   }
+
+  const cachedLabel = cachedDisplayNameMap.get(timezone)
+  if (cachedLabel) return cachedLabel
+
+  // Fallback for unknown timezones
   const parts = timezone.split('/')
   return parts[parts.length - 1].replace(/_/g, ' ')
 }

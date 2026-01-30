@@ -1,7 +1,7 @@
 import type { DateTime } from 'luxon'
+import { memo } from 'react'
 import { AnalogClock } from '../AnalogClock'
 import { Calendar } from '../Calendar'
-import { TimePicker } from '../TimePicker'
 import { TimezoneSelector } from '../TimezoneSelector'
 import styles from './ClockPanel.module.css'
 
@@ -11,17 +11,17 @@ interface ClockPanelProps {
   title: string
   customDateTime?: DateTime
   onCustomDateTimeChange?: (dateTime: DateTime) => void
-  showTimePicker?: boolean
 }
 
-export function ClockPanel({
+// rerender-memoize: Wrap in memo to prevent unnecessary re-renders
+export const ClockPanel = memo(function ClockPanel({
   timezone,
   onTimezoneChange,
   title,
   customDateTime,
   onCustomDateTimeChange,
-  showTimePicker = false,
 }: ClockPanelProps) {
+  const isCustomMode = !!customDateTime
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
@@ -39,20 +39,14 @@ export function ClockPanel({
           timezone={timezone}
           size={240}
           customDateTime={customDateTime}
-          onTimeChange={showTimePicker ? onCustomDateTimeChange : undefined}
+          onTimeChange={isCustomMode ? onCustomDateTimeChange : undefined}
         />
-        {showTimePicker && customDateTime && onCustomDateTimeChange && (
-          <TimePicker
-            dateTime={customDateTime}
-            onChange={onCustomDateTimeChange}
-          />
-        )}
         <Calendar
           timezone={timezone}
           customDateTime={customDateTime}
-          onDateChange={showTimePicker ? onCustomDateTimeChange : undefined}
+          onDateChange={isCustomMode ? onCustomDateTimeChange : undefined}
         />
       </div>
     </div>
   )
-}
+})

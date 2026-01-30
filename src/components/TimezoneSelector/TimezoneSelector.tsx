@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   getTimezoneDisplayName,
   getTimezoneGroups,
@@ -19,7 +27,53 @@ interface TimezoneSelectorProps {
   label?: string
 }
 
-export function TimezoneSelector({
+interface TimezoneOptionItemProps {
+  option: TimezoneOption
+  isHighlighted: boolean
+  isSelected: boolean
+  onOptionClick: (option: TimezoneOption) => void
+  onMouseEnter: () => void
+}
+
+// rerender-stable-callbacks: Extract option to avoid inline functions in map
+const TimezoneOptionItem = memo(function TimezoneOptionItem({
+  option,
+  isHighlighted,
+  isSelected,
+  onOptionClick,
+  onMouseEnter,
+}: TimezoneOptionItemProps) {
+  const handleClick = useCallback(() => {
+    onOptionClick(option)
+  }, [option, onOptionClick])
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        onOptionClick(option)
+      }
+    },
+    [option, onOptionClick],
+  )
+
+  return (
+    <div
+      role="option"
+      aria-selected={isSelected}
+      className={`${styles.option} ${isHighlighted ? styles.optionHighlighted : ''} ${isSelected ? styles.optionSelected : ''}`}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onMouseEnter={onMouseEnter}
+      tabIndex={-1}
+    >
+      <span className={styles.optionLabel}>{option.label}</span>
+      <span className={styles.optionOffset}>{option.offset}</span>
+    </div>
+  )
+})
+
+// rerender-memoize: Wrap in memo to prevent unnecessary re-renders
+export const TimezoneSelector = memo(function TimezoneSelector({
   value,
   onChange,
   label,
@@ -168,33 +222,16 @@ export function TimezoneSelector({
                     {group.options.map((option, optionIndex) => {
                       const absoluteIndex = groupStartIndex + optionIndex
                       return (
-                        <div
+                        <TimezoneOptionItem
                           key={option.value}
-                          role="option"
-                          aria-selected={option.value === value}
-                          className={`${styles.option} ${
-                            absoluteIndex === highlightedIndex
-                              ? styles.optionHighlighted
-                              : ''
-                          } ${option.value === value ? styles.optionSelected : ''}`}
-                          onClick={() => handleOptionClick(option)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              handleOptionClick(option)
-                            }
-                          }}
+                          option={option}
+                          isHighlighted={absoluteIndex === highlightedIndex}
+                          isSelected={option.value === value}
+                          onOptionClick={handleOptionClick}
                           onMouseEnter={() =>
                             setHighlightedIndex(absoluteIndex)
                           }
-                          tabIndex={-1}
-                        >
-                          <span className={styles.optionLabel}>
-                            {option.label}
-                          </span>
-                          <span className={styles.optionOffset}>
-                            {option.offset}
-                          </span>
-                        </div>
+                        />
                       )
                     })}
                   </div>
@@ -204,4 +241,4 @@ export function TimezoneSelector({
       )}
     </div>
   )
-}
+})

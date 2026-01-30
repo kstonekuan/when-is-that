@@ -1,5 +1,5 @@
 import type { DateTime } from 'luxon'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useCurrentTime } from '../../hooks/useCurrentTime'
 import {
   calculateHourHandAngle,
@@ -25,7 +25,8 @@ interface MarkerPosition {
 
 type DragTarget = 'hour' | 'minute' | null
 
-export function AnalogClock({
+// rerender-memoize: Wrap in memo to prevent unnecessary re-renders
+export const AnalogClock = memo(function AnalogClock({
   timezone,
   size = 240,
   customDateTime,
@@ -283,13 +284,105 @@ export function AnalogClock({
     return markers
   }, [center, radius])
 
-  const digitalTimeDisplay = isLive
-    ? displayDateTime.toFormat('HH:mm:ss')
-    : displayDateTime.toFormat('HH:mm')
+  // Track editing state for unpadded input display
+  const [editingHours, setEditingHours] = useState<string | null>(null)
+  const [editingMinutes, setEditingMinutes] = useState<string | null>(null)
+
+  const handleHoursChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value.replace(/\D/g, '').slice(0, 2)
+      setEditingHours(rawValue)
+
+      const currentOnTimeChange = onTimeChangeRef.current
+      const currentCustomDateTime = customDateTimeRef.current
+      if (!currentOnTimeChange || !currentCustomDateTime) return
+      const newHour = Math.min(
+        23,
+        Math.max(0, Number.parseInt(rawValue, 10) || 0),
+      )
+      currentOnTimeChange(currentCustomDateTime.set({ hour: newHour }))
+    },
+    [],
+  )
+
+  const handleMinutesChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value.replace(/\D/g, '').slice(0, 2)
+      setEditingMinutes(rawValue)
+
+      const currentOnTimeChange = onTimeChangeRef.current
+      const currentCustomDateTime = customDateTimeRef.current
+      if (!currentOnTimeChange || !currentCustomDateTime) return
+      const newMinute = Math.min(
+        59,
+        Math.max(0, Number.parseInt(rawValue, 10) || 0),
+      )
+      currentOnTimeChange(currentCustomDateTime.set({ minute: newMinute }))
+    },
+    [],
+  )
+
+  const handleHoursFocus = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      setEditingHours(event.target.value.replace(/^0/, ''))
+      event.target.select()
+    },
+    [],
+  )
+
+  const handleMinutesFocus = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      setEditingMinutes(event.target.value.replace(/^0/, ''))
+      event.target.select()
+    },
+    [],
+  )
+
+  const handleHoursBlur = useCallback(() => {
+    setEditingHours(null)
+  }, [])
+
+  const handleMinutesBlur = useCallback(() => {
+    setEditingMinutes(null)
+  }, [])
+
+  const hoursDisplay = displayDateTime.toFormat('HH')
+  const minutesDisplay = displayDateTime.toFormat('mm')
+  const secondsDisplay = displayDateTime.toFormat('ss')
 
   return (
     <div className={styles.container}>
-      <div className={styles.digitalTime}>{digitalTimeDisplay}</div>
+      {isLive ? (
+        <div className={styles.digitalTime}>
+          {hoursDisplay}:{minutesDisplay}:{secondsDisplay}
+        </div>
+      ) : (
+        <div className={styles.digitalTimeEditable}>
+          <input
+            type="text"
+            inputMode="numeric"
+            className={styles.timeInput}
+            value={editingHours ?? hoursDisplay}
+            onChange={handleHoursChange}
+            onFocus={handleHoursFocus}
+            onBlur={handleHoursBlur}
+            aria-label="Hours"
+            maxLength={2}
+          />
+          <span className={styles.timeSeparator}>:</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            className={styles.timeInput}
+            value={editingMinutes ?? minutesDisplay}
+            onChange={handleMinutesChange}
+            onFocus={handleMinutesFocus}
+            onBlur={handleMinutesBlur}
+            aria-label="Minutes"
+            maxLength={2}
+          />
+        </div>
+      )}
       <div className={styles.clockWrapper}>
         <svg
           ref={svgRef}
@@ -298,7 +391,7 @@ export function AnalogClock({
           viewBox={`0 0 ${size} ${size}`}
           className={`${styles.clock} ${isDraggable ? styles.clockDraggable : ''} ${dragTarget ? styles.clockDragging : ''}`}
           role="img"
-          aria-label={`Analog clock showing ${digitalTimeDisplay}`}
+          aria-label={`Analog clock showing ${hoursDisplay}:${minutesDisplay}${isLive ? `:${secondsDisplay}` : ''}`}
           onMouseDown={handleClockMouseDown}
           onTouchStart={handleClockTouchStart}
         >
@@ -390,4 +483,4 @@ export function AnalogClock({
       </div>
     </div>
   )
-}
+})
