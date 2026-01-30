@@ -35,11 +35,15 @@ export function AnalogClock({
   const svgRef = useRef<SVGSVGElement>(null)
   const [dragTarget, setDragTarget] = useState<DragTarget>(null)
 
-  // rerender-defer-reads: Store frequently changing values in refs for stable callbacks
+  // Store values in refs so event handlers always have access to latest values
   const customDateTimeRef = useRef(customDateTime)
   customDateTimeRef.current = customDateTime
   const onTimeChangeRef = useRef(onTimeChange)
   onTimeChangeRef.current = onTimeChange
+  // dragTarget ref needed because event listeners are attached before state updates
+  const dragTargetRef = useRef<DragTarget>(null)
+  // Track previous minute value to detect crossing 12 o'clock
+  const previousMinuteRef = useRef<number | null>(null)
 
   const isLive = !customDateTime
   const isDraggable = !!onTimeChange && !!customDateTime
@@ -73,6 +77,11 @@ export function AnalogClock({
     (event: React.MouseEvent | React.TouchEvent, target: DragTarget) => {
       if (!isDraggable) return
       event.preventDefault()
+      dragTargetRef.current = target
+      // Initialize previous minute for detecting 12 o'clock crossings
+      if (target === 'minute' && customDateTimeRef.current) {
+        previousMinuteRef.current = customDateTimeRef.current.minute
+      }
       setDragTarget(target)
     },
     [isDraggable],
@@ -80,18 +89,40 @@ export function AnalogClock({
 
   const handleDrag = useCallback(
     (clientX: number, clientY: number) => {
-      // js-early-exit: Return early if conditions not met
-      if (!dragTarget) return
+      // Read from ref to get latest value (state may not have updated yet)
+      const currentDragTarget = dragTargetRef.current
+      if (!currentDragTarget) return
       const currentOnTimeChange = onTimeChangeRef.current
       const currentCustomDateTime = customDateTimeRef.current
       if (!currentOnTimeChange || !currentCustomDateTime) return
 
       const angle = getAngleFromPoint(clientX, clientY)
 
-      if (dragTarget === 'minute') {
+      if (currentDragTarget === 'minute') {
         const newMinutes = Math.round(angle / 6) % 60
-        currentOnTimeChange(currentCustomDateTime.set({ minute: newMinutes }))
-      } else if (dragTarget === 'hour') {
+        const previousMinutes = previousMinuteRef.current
+        let hourAdjustment = 0
+
+        if (previousMinutes !== null) {
+          // Detect crossing 12 o'clock (0/60 boundary)
+          // Forward: going from high minutes (45-59) to low minutes (0-14)
+          if (previousMinutes > 45 && newMinutes < 15) {
+            hourAdjustment = 1
+          }
+          // Backward: going from low minutes (0-14) to high minutes (45-59)
+          else if (previousMinutes < 15 && newMinutes > 45) {
+            hourAdjustment = -1
+          }
+        }
+
+        previousMinuteRef.current = newMinutes
+
+        let newDateTime = currentCustomDateTime.set({ minute: newMinutes })
+        if (hourAdjustment !== 0) {
+          newDateTime = newDateTime.plus({ hours: hourAdjustment })
+        }
+        currentOnTimeChange(newDateTime)
+      } else if (currentDragTarget === 'hour') {
         const hourFromAngle = angle / 30
         const currentHour = currentCustomDateTime.hour
         const isPM = currentHour >= 12
@@ -102,7 +133,7 @@ export function AnalogClock({
         currentOnTimeChange(currentCustomDateTime.set({ hour: newHour }))
       }
     },
-    [dragTarget, getAngleFromPoint],
+    [getAngleFromPoint],
   )
 
   const handleMouseMove = useCallback(
@@ -122,6 +153,8 @@ export function AnalogClock({
   )
 
   const handleDragEnd = useCallback(() => {
+    dragTargetRef.current = null
+    previousMinuteRef.current = null
     setDragTarget(null)
   }, [])
 

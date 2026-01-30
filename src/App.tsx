@@ -34,11 +34,20 @@ export default function App() {
     [mode],
   )
 
-  const handleCustomDateTimeChange = useCallback(
+  const handleLocalDateTimeChange = useCallback(
     (newDateTime: DateTime) => {
+      // Time changed on local clock - keep the local time and store in local timezone
       setCustomDateTime(
         newDateTime.setZone(localTimezone, { keepLocalTime: true }),
       )
+    },
+    [localTimezone],
+  )
+
+  const handleComparisonDateTimeChange = useCallback(
+    (newDateTime: DateTime) => {
+      // Time changed on comparison clock - convert back to local timezone for storage
+      setCustomDateTime(newDateTime.setZone(localTimezone))
     },
     [localTimezone],
   )
@@ -69,7 +78,7 @@ export default function App() {
           onTimezoneChange={handleLocalTimezoneChange}
           title="Your Time"
           customDateTime={localCustomDateTime}
-          onCustomDateTimeChange={handleCustomDateTimeChange}
+          onCustomDateTimeChange={handleLocalDateTimeChange}
           showTimePicker={mode === 'custom'}
         />
 
@@ -80,6 +89,8 @@ export default function App() {
           onTimezoneChange={setComparisonTimezone}
           title="Their Time"
           customDateTime={convertedDateTime}
+          onCustomDateTimeChange={handleComparisonDateTimeChange}
+          showTimePicker={mode === 'custom'}
         />
       </main>
     </div>
