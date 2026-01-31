@@ -64,6 +64,7 @@
 
 .clockDraggable {
   cursor: grab;
+  touch-action: none;
 }
 
 .clockDragging {

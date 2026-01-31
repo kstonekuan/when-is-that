@@ -146,6 +146,7 @@ export const AnalogClock = memo(function AnalogClock({
 
   const handleTouchMove = useCallback(
     (event: TouchEvent) => {
+      event.preventDefault()
       if (event.touches.length > 0) {
         handleDrag(event.touches[0].clientX, event.touches[0].clientY)
       }
