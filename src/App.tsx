@@ -7,7 +7,7 @@ import { useLocalTimezone } from './hooks/useLocalTimezone'
 
 const GITHUB_URL = 'https://github.com/kstonekuan/when-is-that'
 
-const DEFAULT_COMPARISON_TIMEZONE = 'America/New_York'
+const DEFAULT_COMPARISON_TIMEZONE = 'America/Los_Angeles'
 
 // rendering-hoist-jsx: Hoist static elements outside component
 const GitHubIcon = (
@@ -32,7 +32,7 @@ export default function App() {
   const [localTimezone, setLocalTimezone] = useState(detectedTimezone)
   const [comparisonTimezone, setComparisonTimezone] = useState(() => {
     if (detectedTimezone === DEFAULT_COMPARISON_TIMEZONE) {
-      return 'Europe/London'
+      return 'America/New_York'
     }
     return DEFAULT_COMPARISON_TIMEZONE
   })
@@ -109,7 +109,6 @@ export default function App() {
         <ClockPanel
           timezone={localTimezone}
           onTimezoneChange={handleLocalTimezoneChange}
-          title="Your Time"
           customDateTime={localCustomDateTime}
           onCustomDateTimeChange={handleLocalDateTimeChange}
         />
@@ -119,7 +118,6 @@ export default function App() {
         <ClockPanel
           timezone={comparisonTimezone}
           onTimezoneChange={setComparisonTimezone}
-          title="Their Time"
           customDateTime={convertedDateTime}
           onCustomDateTimeChange={handleComparisonDateTimeChange}
         />

@@ -15,7 +15,7 @@ const TIMEZONE_DATA: { zone: string; label: string; region: string }[] = [
   { zone: 'America/New_York', label: 'New York', region: 'Americas' },
   { zone: 'America/Chicago', label: 'Chicago', region: 'Americas' },
   { zone: 'America/Denver', label: 'Denver', region: 'Americas' },
-  { zone: 'America/Los_Angeles', label: 'Los Angeles', region: 'Americas' },
+  { zone: 'America/Los_Angeles', label: 'San Francisco', region: 'Americas' },
   { zone: 'America/Anchorage', label: 'Anchorage', region: 'Americas' },
   { zone: 'America/Phoenix', label: 'Phoenix', region: 'Americas' },
   { zone: 'America/Toronto', label: 'Toronto', region: 'Americas' },
