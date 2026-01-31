@@ -67,7 +67,14 @@ const TimezoneOptionItem = memo(function TimezoneOptionItem({
       tabIndex={-1}
     >
       <span className={styles.optionLabel}>{option.label}</span>
-      <span className={styles.optionOffset}>{option.offset}</span>
+      <span className={styles.optionRight}>
+        {option.abbreviation && (
+          <span className={styles.optionAbbreviation}>
+            {option.abbreviation}
+          </span>
+        )}
+        <span className={styles.optionOffset}>{option.offset}</span>
+      </span>
     </div>
   )
 })

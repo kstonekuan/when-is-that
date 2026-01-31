@@ -48,20 +48,6 @@
   max-width: 1200px;
 }
 
-.divider {
-  display: none;
-  width: 1px;
-  background: var(--color-border);
-  align-self: stretch;
-  margin: var(--space-xl) 0;
-}
-
-@media (min-width: 900px) {
-  .divider {
-    display: block;
-  }
-}
-
 .floatingToggle {
   position: fixed;
   bottom: var(--space-xl);

@@ -116,6 +116,19 @@
   color: var(--color-text-primary);
 }
 
+.optionRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.optionAbbreviation {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
 .optionOffset {
   font-family: var(--font-body);
   font-size: 0.8125rem;

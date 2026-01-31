@@ -113,8 +113,6 @@ export default function App() {
           onCustomDateTimeChange={handleLocalDateTimeChange}
         />
 
-        <div className={styles.divider} />
-
         <ClockPanel
           timezone={comparisonTimezone}
           onTimezoneChange={setComparisonTimezone}
