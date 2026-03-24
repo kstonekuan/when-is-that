@@ -72,14 +72,17 @@ const TIMEZONE_DATA: { zone: string; label: string; region: string }[] = [
   { zone: 'UTC', label: 'UTC', region: 'Universal' },
 ]
 
-export function getTimezoneAbbreviation(timezone: string): string {
+export function getTimezoneAbbreviation(
+  timezone: string,
+  referenceDate?: Date,
+): string {
   try {
-    const now = new Date()
+    const date = referenceDate ?? new Date()
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       timeZoneName: 'short',
     })
-    const parts = formatter.formatToParts(now)
+    const parts = formatter.formatToParts(date)
     const abbreviationPart = parts.find((part) => part.type === 'timeZoneName')
     const abbreviation = abbreviationPart?.value ?? ''
 
@@ -94,14 +97,14 @@ export function getTimezoneAbbreviation(timezone: string): string {
   }
 }
 
-function getTimezoneOffset(timezone: string): string {
+function getTimezoneOffset(timezone: string, referenceDate?: Date): string {
   try {
-    const now = new Date()
+    const date = referenceDate ?? new Date()
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       timeZoneName: 'shortOffset',
     })
-    const parts = formatter.formatToParts(now)
+    const parts = formatter.formatToParts(date)
     const offsetPart = parts.find((part) => part.type === 'timeZoneName')
     if (offsetPart) {
       const offset = offsetPart.value
@@ -114,12 +117,27 @@ function getTimezoneOffset(timezone: string): string {
   }
 }
 
-// js-caching: Cache computed timezone data to avoid recalculation on each call
+// js-caching: Cache computed timezone data keyed by date (day granularity) for DST-awareness
+let cachedDateKey: string | null = null
 let cachedTimezoneGroups: TimezoneGroup[] | null = null
 let cachedAllTimezones: TimezoneOption[] | null = null
-let cachedDisplayNameMap: Map<string, string> | null = null
 
-export function getTimezoneGroups(): TimezoneGroup[] {
+function getDateCacheKey(referenceDate?: Date): string {
+  const date = referenceDate ?? new Date()
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+}
+
+function invalidateCacheIfNeeded(referenceDate?: Date): void {
+  const key = getDateCacheKey(referenceDate)
+  if (cachedDateKey !== key) {
+    cachedDateKey = key
+    cachedTimezoneGroups = null
+    cachedAllTimezones = null
+  }
+}
+
+export function getTimezoneGroups(referenceDate?: Date): TimezoneGroup[] {
+  invalidateCacheIfNeeded(referenceDate)
   if (cachedTimezoneGroups) return cachedTimezoneGroups
 
   const grouped: Record<string, TimezoneOption[]> = {}
@@ -129,8 +147,8 @@ export function getTimezoneGroups(): TimezoneGroup[] {
       value: tz.zone,
       label: tz.label,
       region: tz.region,
-      offset: getTimezoneOffset(tz.zone),
-      abbreviation: getTimezoneAbbreviation(tz.zone),
+      offset: getTimezoneOffset(tz.zone, referenceDate),
+      abbreviation: getTimezoneAbbreviation(tz.zone, referenceDate),
     }
 
     if (!grouped[tz.region]) {
@@ -159,26 +177,30 @@ export function getTimezoneGroups(): TimezoneGroup[] {
   return cachedTimezoneGroups
 }
 
-export function getAllTimezones(): TimezoneOption[] {
+export function getAllTimezones(referenceDate?: Date): TimezoneOption[] {
+  invalidateCacheIfNeeded(referenceDate)
   if (cachedAllTimezones) return cachedAllTimezones
 
   cachedAllTimezones = TIMEZONE_DATA.map((tz) => ({
     value: tz.zone,
     label: tz.label,
     region: tz.region,
-    offset: getTimezoneOffset(tz.zone),
-    abbreviation: getTimezoneAbbreviation(tz.zone),
+    offset: getTimezoneOffset(tz.zone, referenceDate),
+    abbreviation: getTimezoneAbbreviation(tz.zone, referenceDate),
   }))
 
   return cachedAllTimezones
 }
 
-export function searchTimezones(query: string): TimezoneOption[] {
+export function searchTimezones(
+  query: string,
+  referenceDate?: Date,
+): TimezoneOption[] {
   const lowerQuery = query.toLowerCase()
   // js-early-exit: Return early for empty queries
-  if (!lowerQuery) return getAllTimezones()
+  if (!lowerQuery) return getAllTimezones(referenceDate)
 
-  return getAllTimezones().filter(
+  return getAllTimezones(referenceDate).filter(
     (tz) =>
       tz.label.toLowerCase().includes(lowerQuery) ||
       tz.value.toLowerCase().includes(lowerQuery) ||
@@ -192,12 +214,17 @@ export function getLocalTimezone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone
 }
 
-export function getTimezoneDisplayName(timezone: string): string {
-  // js-caching: Cache city name lookups
+// js-caching: Cache city name lookups (static, not DST-dependent)
+let cachedDisplayNameMap: Map<string, string> | null = null
+
+export function getTimezoneDisplayName(
+  timezone: string,
+  referenceDate?: Date,
+): string {
   if (!cachedDisplayNameMap) {
     cachedDisplayNameMap = new Map()
-    for (const tz of getAllTimezones()) {
-      cachedDisplayNameMap.set(tz.value, tz.label)
+    for (const tz of TIMEZONE_DATA) {
+      cachedDisplayNameMap.set(tz.zone, tz.label)
     }
   }
 
@@ -208,7 +235,6 @@ export function getTimezoneDisplayName(timezone: string): string {
     cityName = parts[parts.length - 1].replace(/_/g, ' ')
   }
 
-  // Get dynamic abbreviation (not cached to reflect current DST status)
-  const abbreviation = getTimezoneAbbreviation(timezone)
+  const abbreviation = getTimezoneAbbreviation(timezone, referenceDate)
   return abbreviation ? `${cityName} (${abbreviation})` : cityName
 }

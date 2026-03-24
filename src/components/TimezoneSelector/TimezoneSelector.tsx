@@ -25,6 +25,7 @@ interface TimezoneSelectorProps {
   value: string
   onChange: (timezone: string) => void
   label?: string
+  referenceDate?: Date
 }
 
 interface TimezoneOptionItemProps {
@@ -84,6 +85,7 @@ export const TimezoneSelector = memo(function TimezoneSelector({
   value,
   onChange,
   label,
+  referenceDate,
 }: TimezoneSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,16 +94,16 @@ export const TimezoneSelector = memo(function TimezoneSelector({
   const inputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
 
-  const displayValue = getTimezoneDisplayName(value)
+  const displayValue = getTimezoneDisplayName(value, referenceDate)
 
   const filteredGroups = useMemo((): TimezoneGroup[] => {
     if (!searchQuery.trim()) {
-      return getTimezoneGroups()
+      return getTimezoneGroups(referenceDate)
     }
-    const results = searchTimezones(searchQuery)
+    const results = searchTimezones(searchQuery, referenceDate)
     if (results.length === 0) return []
     return [{ label: 'Search Results', options: results }]
-  }, [searchQuery])
+  }, [searchQuery, referenceDate])
 
   const flatOptions = useMemo((): TimezoneOption[] => {
     return filteredGroups.flatMap((group) => group.options)

@@ -72,6 +72,11 @@ export default function App() {
     [localTimezone],
   )
 
+  const referenceDate = useMemo(() => {
+    if (mode === 'live') return undefined
+    return customDateTime.toJSDate()
+  }, [mode, customDateTime])
+
   const convertedDateTime = useMemo(() => {
     if (mode === 'live') return undefined
     return customDateTime.setZone(comparisonTimezone)
@@ -111,6 +116,7 @@ export default function App() {
           onTimezoneChange={handleLocalTimezoneChange}
           customDateTime={localCustomDateTime}
           onCustomDateTimeChange={handleLocalDateTimeChange}
+          referenceDate={referenceDate}
         />
 
         <ClockPanel
@@ -118,6 +124,7 @@ export default function App() {
           onTimezoneChange={setComparisonTimezone}
           customDateTime={convertedDateTime}
           onCustomDateTimeChange={handleComparisonDateTimeChange}
+          referenceDate={referenceDate}
         />
       </main>
 

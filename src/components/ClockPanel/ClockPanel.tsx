@@ -10,6 +10,7 @@ interface ClockPanelProps {
   onTimezoneChange?: (timezone: string) => void
   customDateTime?: DateTime
   onCustomDateTimeChange?: (dateTime: DateTime) => void
+  referenceDate?: Date
 }
 
 // rerender-memoize: Wrap in memo to prevent unnecessary re-renders
@@ -18,13 +19,18 @@ export const ClockPanel = memo(function ClockPanel({
   onTimezoneChange,
   customDateTime,
   onCustomDateTimeChange,
+  referenceDate,
 }: ClockPanelProps) {
   const isCustomMode = !!customDateTime
   return (
     <div className={styles.panel}>
       <div className={styles.selectorWrapper}>
         {onTimezoneChange && (
-          <TimezoneSelector value={timezone} onChange={onTimezoneChange} />
+          <TimezoneSelector
+            value={timezone}
+            onChange={onTimezoneChange}
+            referenceDate={referenceDate}
+          />
         )}
       </div>
 
